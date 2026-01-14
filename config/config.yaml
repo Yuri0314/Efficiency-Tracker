@@ -1,0 +1,62 @@
+# Personal Efficiency Tracker Configuration
+
+# ActivityWatch settings
+activitywatch:
+  host: "http://localhost:5600"
+
+# AI API settings (can be overridden by environment variables)
+ai:
+  # Environment variable: OPENAI_BASE_URL
+  api_base: "https://your-company-api/v1"
+  # Environment variable: OPENAI_API_KEY
+  api_key: "your-api-key"
+  model: "glm-4.7"
+  max_tokens: 2000
+  temperature: 0.7
+
+# Output settings
+output:
+  reports_dir: "./reports"
+
+# Application category rules
+# Apps are matched by name (case-insensitive substring match)
+categories:
+  coding:
+    - "VS Code"
+    - "Code"
+    - "PyCharm"
+    - "IntelliJ"
+    - "WebStorm"
+    - "Xcode"
+    - "Terminal"
+    - "iTerm"
+    - "Cursor"
+  browser:
+    - "Chrome"
+    - "Safari"
+    - "Firefox"
+    - "Arc"
+    - "Edge"
+  communication:
+    - "钉钉"
+    - "企业微信"
+    - "Slack"
+    - "飞书"
+    - "腾讯会议"
+    - "Zoom"
+    - "微信"
+    - "Messages"
+  writing:
+    - "Notion"
+    - "Obsidian"
+    - "Word"
+    - "Pages"
+    - "Typora"
+    - "Bear"
+
+# Editor watcher client prefixes for collecting coding statistics
+editor_watchers:
+  - "aw-watcher-vscode"
+  - "aw-watcher-pycharm"
+  - "aw-watcher-intellij"
+  - "aw-watcher-webstorm"
