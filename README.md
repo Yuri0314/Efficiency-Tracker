@@ -1,6 +1,6 @@
 # Efficiency Tracker
 
-基于 [ActivityWatch](https://activitywatch.net/) 的个人效率追踪系统，自动收集电脑使用数据并生成 AI 分析报告。
+基于 [ActivityWatch](https://github.com/ActivityWatch/activitywatch) 的个人效率追踪系统，自动收集电脑使用数据并生成 AI 分析报告。
 
 ## 功能特点
 
@@ -13,7 +13,7 @@
 ## 前置要求
 
 - Python 3.9+
-- [ActivityWatch](https://activitywatch.net/) 已安装并运行
+- [ActivityWatch](https://github.com/ActivityWatch/activitywatch) 已安装并运行
 - OpenAI 兼容的 API（可选，用于 AI 分析）
 
 ## 安装
