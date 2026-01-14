@@ -43,6 +43,7 @@ class ReportGenerator:
         start: datetime,
         end: datetime,
         period_name: str,
+        views: dict[str, str] | None = None,
     ) -> str:
         """
         Generate complete Markdown report content.
@@ -53,10 +54,45 @@ class ReportGenerator:
             start: Start datetime of the report period.
             end: End datetime of the report period.
             period_name: Human-readable name for the period.
+            views: Optional dictionary containing behavior views (timeline, sessions, etc.).
 
         Returns:
             The complete Markdown report as a string.
         """
+        # Build behavior views section if available
+        views_section = ""
+        if views:
+            timeline = views.get("timeline", "")
+            sessions = views.get("sessions", "")
+            hourly_switches = views.get("hourly_switches", "")
+
+            views_section = f"""
+---
+
+## 📋 行为视图
+
+### 应用使用时间线
+> 展示应用切换的时间序列，带持续时长。时间为本机记录时间。
+
+```
+{timeline}
+```
+
+### 连续使用段落
+> 相邻同应用事件合并后的使用段落（超过10分钟的）
+
+```
+{sessions}
+```
+
+### 各小时切换频率
+> 每小时应用切换次数，可反映注意力碎片化程度
+
+```
+{hourly_switches}
+```
+"""
+
         return f"""# 个人效率报告
 > {period_name} | {start.strftime('%Y-%m-%d')} ~ {end.strftime('%Y-%m-%d')}
 > 生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M')}
@@ -69,9 +105,10 @@ class ReportGenerator:
 
 ---
 
-## 📈 原始数据
+## 📈 统计数据
 
 {data_summary}
+{views_section}
 """
 
     def save(
@@ -81,6 +118,7 @@ class ReportGenerator:
         start: datetime,
         end: datetime,
         period_name: str,
+        views: dict[str, str] | None = None,
     ) -> str:
         """
         Save the report to a Markdown file.
@@ -93,6 +131,7 @@ class ReportGenerator:
             start: Start datetime of the report period.
             end: End datetime of the report period.
             period_name: Human-readable name for the period.
+            views: Optional dictionary containing behavior views.
 
         Returns:
             The path to the saved report file.
@@ -103,7 +142,7 @@ class ReportGenerator:
         filename = f"{self.output_dir}/report_{period_name}_{date_str}.md"
 
         content = self.generate_markdown(
-            ai_report, data_summary, start, end, period_name
+            ai_report, data_summary, start, end, period_name, views
         )
 
         with open(filename, "w", encoding="utf-8") as f:
@@ -124,7 +163,7 @@ class ConsolePrinter:
     def print_header() -> None:
         """Print the application header banner."""
         print("=" * 50)
-        print("🚀 个人效率感知系统 v0.3")
+        print("🚀 个人效率感知系统")
         print("=" * 50)
 
     @staticmethod

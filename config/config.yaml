@@ -11,7 +11,7 @@ ai:
   # Environment variable: OPENAI_API_KEY
   api_key: "your-api-key"
   model: "glm-4.7"
-  max_tokens: 2000
+  max_tokens: 4000
   temperature: 0.7
 
 # Output settings
@@ -60,3 +60,11 @@ editor_watchers:
   - "aw-watcher-pycharm"
   - "aw-watcher-intellij"
   - "aw-watcher-webstorm"
+
+# Work-related domains (used in website summary categorization)
+# These domains will be categorized as "work-related" in browser analysis
+work_domains:
+  - "alidocs.dingtalk.com"
+  - "yuque.antfin.com"
+  - "aliyuque.antfin.com"
+  - "code.alibaba-inc.com"

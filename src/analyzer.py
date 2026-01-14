@@ -73,10 +73,12 @@ class AIAnalyzer:
         period_name: str,
     ) -> tuple[str, str]:
         """
-        Build an AI analysis prompt from processed statistics.
+        Build an AI analysis prompt from processed statistics and behavior views.
 
         Args:
-            stats: Processed statistics dictionary from DataProcessor.
+            stats: Processed statistics dictionary from DataProcessor,
+                including 'views' with timeline, sessions, hourly_switches,
+                and website_summary.
             start: Start datetime of the report period.
             end: End datetime of the report period.
             period_name: Human-readable name for the period (e.g., "Weekly").
@@ -88,23 +90,13 @@ class AIAnalyzer:
         """
         period = f"{start.strftime('%Y-%m-%d')} ~ {end.strftime('%Y-%m-%d')}"
 
+        # Basic statistics for reference
         app_list = "\n".join(
             [f"  - {app}: {hours}h" for app, hours in stats["by_app"]]
         )
         category_list = "\n".join(
             [f"  - {cat}: {hours}h" for cat, hours in stats["by_category"]]
         )
-
-        # Browser statistics section
-        browser_section = ""
-        if stats["browser"]["top_domains"]:
-            domain_list = "\n".join(
-                [f"  - {d}: {h}h" for d, h in stats["browser"]["top_domains"][:5]]
-            )
-            browser_section = f"""
-## 浏览器使用（共 {stats['browser']['total_hours']}h）
-{domain_list}
-"""
 
         # Editor statistics section
         editor_section = ""
@@ -124,6 +116,7 @@ class AIAnalyzer:
 {proj_list}
 """
 
+        # Data summary for report (kept for backward compatibility)
         data_summary = f"""
 ## 报告类型
 {period_name}
@@ -140,7 +133,6 @@ class AIAnalyzer:
 
 ## 按类别统计
 {category_list}
-{browser_section}
 {editor_section}
 """
 
@@ -151,30 +143,77 @@ class AIAnalyzer:
             else 0
         )
 
-        prompt = f"""以下是我{period_name}的电脑使用数据统计：
+        # Get behavior views
+        views = stats.get("views", {})
+        timeline_view = views.get("timeline", "（无数据）")
+        session_view = views.get("sessions", "（无数据）")
+        hourly_switches_view = views.get("hourly_switches", "（无数据）")
+        website_summary_view = views.get("website_summary", "（无数据）")
 
-{data_summary}
+        # Build prompt with behavior views for AI insight discovery
+        prompt = f"""以下是我{period_name}（{period}）的电脑使用行为数据：
 
-补充信息：
-- 活跃率：{activity_rate}%（活跃时长/总记录时长）
+## 基础信息
+- 总记录时长: {stats['total_hours']} 小时
+- 活跃时长（非AFK）: {stats['not_afk_hours']} 小时
+- 活跃率: {activity_rate}%
 
-请分析这些数据，生成一份简洁的效率报告。
+## 应用使用时间线
+（展示应用切换的时间序列，带持续时长）
+{timeline_view}
+
+## 连续使用段落
+（相邻同应用事件合并后的使用段落，超过10分钟的）
+{session_view}
+
+## 各小时切换频率
+（每小时应用切换次数，可反映注意力碎片化程度）
+{hourly_switches_view}
+
+## 网站访问摘要
+{website_summary_view}
+
+## 应用使用统计
+{app_list}
+
+---
+
+请分析上述数据，帮我发现行为模式和效率洞察。
+
+## 分析要点
+
+1. **打断模式**：有没有某个应用/网站经常打断工作流？从时间线中寻找线索。
+2. **低效时段**：哪个时间段切换最频繁？这可能是效率较低的时段。
+3. **专注时段**：从连续使用段落中，找出能保持较长专注的时间段。
+4. **有趣发现**：任何你注意到的模式、规律或异常。
 
 ## 输出格式
 
 ### 📊 整体概览
-（用1-2句话总结本周期的效率表现，包含活跃率评价）
+（1-2句话总结本周期的整体状况）
 
 ### ⏰ 时间分配
-（分析时间主要花在哪些应用/类别，指出占比最高的2-3项）
+（指出时间主要花在哪些应用/类别，占比最高的2-3项）
 
 ### 💡 发现与洞察
-（基于数据发现的模式、趋势或潜在问题，用要点列出）
+（基于行为数据发现的具体模式，用要点列出，要具体到时间点或应用）
 
 ### ✅ 改进建议
 （1-2条具体可行的建议，针对发现的问题）
+例如好的建议："14:00-15:00 切换频繁，考虑把会议安排在这个时段"
+例如差的建议："建议减少切换次数"（太泛泛）
 
-注意：严格按照上述格式输出，不要添加额外章节。
+### 🎯 锐评
+（用一句犀利、直接的话点评今天的工作状态，可以毒舌但要基于数据，像朋友间的吐槽）
+例如："花了3小时在浏览器上，你是在工作还是在网上冲浪？"
+例如："切换了200次应用，你的注意力比金鱼还短。"
+例如："今天状态不错，终于像个正经打工人了。"
+
+注意：
+- 基于数据说话，不要编造不存在的信息
+- 建议要具体、可执行，不要泛泛而谈
+- 锐评要有趣、直接，但不要人身攻击
+- 严格按照上述格式输出，不要添加额外章节
 """
         return prompt, data_summary
 
@@ -224,7 +263,31 @@ class AIAnalyzer:
             )
             resp.raise_for_status()
             result = resp.json()
-            return result["choices"][0]["message"]["content"]
+
+            # Handle different response formats
+            if "choices" in result and result["choices"]:
+                choice = result["choices"][0]
+                message = choice.get("message", {})
+
+                # Standard OpenAI format
+                if "content" in message and message["content"]:
+                    return message["content"]
+
+                # Reasoning model format (like o1/DeepSeek) - has reasoning_content
+                if "reasoning_content" in message:
+                    # For reasoning models, the actual answer should be in 'content'
+                    # If content is empty but we have reasoning, return reasoning
+                    content = message.get("content") or message.get("reasoning_content")
+                    if content:
+                        return content
+
+                # Some APIs use 'text' directly
+                if "text" in choice:
+                    return choice["text"]
+
+            # If we get here, the response format is unexpected
+            return f"AI 响应格式异常: {result}"
+
         except requests.exceptions.Timeout:
             return "AI 调用超时，请稍后重试"
         except requests.exceptions.RequestException as e:

@@ -15,6 +15,7 @@ from typing import Any
 
 import yaml
 
+from src.analyzer import AIAnalyzer
 from src.collector import (
     ActivityWatchCollector,
     get_custom_range,
@@ -22,7 +23,6 @@ from src.collector import (
     get_week_range,
 )
 from src.processor import DataProcessor
-from src.analyzer import AIAnalyzer
 from src.reporter import ConsolePrinter, ReportGenerator
 
 
@@ -41,7 +41,7 @@ def load_config(config_path: str = "config/config.yaml") -> dict[str, Any]:
         print(f"⚠️  Config file not found: {config_path}, using defaults")
         return get_default_config()
 
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -79,6 +79,12 @@ def get_default_config() -> dict[str, Any]:
             "aw-watcher-pycharm",
             "aw-watcher-intellij",
             "aw-watcher-webstorm",
+        ],
+        "work_domains": [
+            "alidocs.dingtalk.com",
+            "yuque.antfin.com",
+            "aliyuque.antfin.com",
+            "code.alibaba-inc.com",
         ],
     }
 
@@ -181,7 +187,10 @@ def main() -> None:
     # Step 4: Process data
     printer.print_processing()
 
-    processor = DataProcessor(config["categories"])
+    processor = DataProcessor(
+        categories=config["categories"],
+        work_domains=config.get("work_domains", []),
+    )
     stats = processor.process(raw_data)
 
     printer.print_event_counts(stats["event_counts"])
@@ -208,7 +217,9 @@ def main() -> None:
 
     # Step 6: Generate report
     reporter = ReportGenerator(config["output"]["reports_dir"])
-    filename = reporter.save(ai_report, data_summary, start, end, period_name)
+    filename = reporter.save(
+        ai_report, data_summary, start, end, period_name, stats.get("views")
+    )
 
     printer.print_saved(filename)
     printer.print_report(ai_report)
