@@ -19,9 +19,12 @@ from src.analyzer import AIAnalyzer
 from src.collector import (
     ActivityWatchCollector,
     get_custom_range,
+    get_last_week_range,
     get_today_range,
     get_week_range,
+    get_yesterday_range,
 )
+from src.compare import compare_stats, format_comparison_for_prompt
 from src.processor import DataProcessor
 from src.reporter import ConsolePrinter, ReportGenerator
 
@@ -196,6 +199,34 @@ def main() -> None:
     printer.print_event_counts(stats["event_counts"])
     printer.print_stats_summary(stats)
 
+    # Step 4.5: Collect and process historical data for trend comparison
+    trend_info = None
+    if period_name in ("日报", "周报"):
+        print("\n📈 正在获取历史数据进行对比...")
+
+        # Determine historical time range
+        if period_name == "日报":
+            hist_start, hist_end = get_yesterday_range()
+            hist_label = "昨天"
+        else:
+            hist_start, hist_end = get_last_week_range()
+            hist_label = "上周"
+
+        try:
+            hist_raw_data = collector.collect_all(
+                hist_start, hist_end, config.get("editor_watchers", [])
+            )
+
+            if hist_raw_data.get("window"):
+                hist_stats = processor.process(hist_raw_data)
+                comparison = compare_stats(stats, hist_stats)
+                trend_info = format_comparison_for_prompt(comparison, period_name)
+                print(f"   - 已获取{hist_label}数据，可进行趋势对比")
+            else:
+                print(f"   - {hist_label}无数据，跳过趋势对比")
+        except Exception as e:
+            print(f"   - 获取历史数据失败: {e}，跳过趋势对比")
+
     # Step 5: AI analysis
     ai_config = config["ai"]
     analyzer = AIAnalyzer(
@@ -206,7 +237,7 @@ def main() -> None:
         temperature=ai_config.get("temperature", 0.7),
     )
 
-    prompt, data_summary = analyzer.build_prompt(stats, start, end, period_name)
+    prompt, data_summary = analyzer.build_prompt(stats, start, end, period_name, trend_info)
 
     if args.no_ai:
         printer.print_ai_skipped()

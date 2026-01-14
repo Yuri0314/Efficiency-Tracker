@@ -71,6 +71,7 @@ class AIAnalyzer:
         start: datetime,
         end: datetime,
         period_name: str,
+        trend_info: str | None = None,
     ) -> tuple[str, str]:
         """
         Build an AI analysis prompt from processed statistics and behavior views.
@@ -82,6 +83,7 @@ class AIAnalyzer:
             start: Start datetime of the report period.
             end: End datetime of the report period.
             period_name: Human-readable name for the period (e.g., "Weekly").
+            trend_info: Optional formatted string with trend comparison data.
 
         Returns:
             A tuple of (prompt, data_summary) where:
@@ -150,6 +152,11 @@ class AIAnalyzer:
         hourly_switches_view = views.get("hourly_switches", "（无数据）")
         website_summary_view = views.get("website_summary", "（无数据）")
 
+        # Build trend section if comparison data is available
+        trend_section = ""
+        if trend_info:
+            trend_section = f"\n{trend_info}\n"
+
         # Build prompt with behavior views for AI insight discovery
         prompt = f"""以下是我{period_name}（{period}）的电脑使用行为数据：
 
@@ -176,6 +183,7 @@ class AIAnalyzer:
 ## 应用使用统计
 {app_list}
 
+{trend_section}
 ---
 
 请分析上述数据，帮我发现行为模式和效率洞察。
@@ -185,7 +193,8 @@ class AIAnalyzer:
 1. **打断模式**：有没有某个应用/网站经常打断工作流？从时间线中寻找线索。
 2. **低效时段**：哪个时间段切换最频繁？这可能是效率较低的时段。
 3. **专注时段**：从连续使用段落中，找出能保持较长专注的时间段。
-4. **有趣发现**：任何你注意到的模式、规律或异常。
+4. **趋势变化**：对比历史数据，有什么显著的进步或退步？
+5. **有趣发现**：任何你注意到的模式、规律或异常。
 
 ## 输出格式
 
@@ -197,6 +206,9 @@ class AIAnalyzer:
 
 ### 💡 发现与洞察
 （基于行为数据发现的具体模式，用要点列出，要具体到时间点或应用）
+
+### 📈 趋势变化
+（如有历史对比数据，指出显著的进步或退步，没有历史数据则跳过此节）
 
 ### ✅ 改进建议
 （1-2条具体可行的建议，针对发现的问题）

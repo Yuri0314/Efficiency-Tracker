@@ -234,3 +234,34 @@ def get_custom_range(start_str: str, end_str: str) -> tuple[datetime, datetime]:
         hour=23, minute=59, second=59
     )
     return start, end
+
+
+def get_yesterday_range() -> tuple[datetime, datetime]:
+    """
+    Get the time range for yesterday (full day).
+
+    Returns:
+        A tuple of (start_of_yesterday, end_of_yesterday).
+    """
+    now = datetime.now()
+    yesterday = now - timedelta(days=1)
+    start = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
+    return start, end
+
+
+def get_last_week_range() -> tuple[datetime, datetime]:
+    """
+    Get the time range for last week (Monday to Sunday).
+
+    Returns:
+        A tuple of (start_of_last_week, end_of_last_week).
+    """
+    now = datetime.now()
+    # Start of this week (Monday)
+    this_week_start = now - timedelta(days=now.weekday())
+    this_week_start = this_week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Last week is 7 days before this week
+    last_week_start = this_week_start - timedelta(days=7)
+    last_week_end = this_week_start - timedelta(seconds=1)  # Sunday 23:59:59
+    return last_week_start, last_week_end
