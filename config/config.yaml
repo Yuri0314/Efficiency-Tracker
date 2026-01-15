@@ -68,3 +68,27 @@ work_domains:
   - "yuque.antfin.com"
   - "aliyuque.antfin.com"
   - "code.alibaba-inc.com"
+
+# Notification settings
+notification:
+  enabled: false  # Set to true to enable notifications
+
+  channels:
+    # DingTalk personal message (requires enterprise internal application)
+    dingtalk:
+      enabled: false
+      corp_id: "your-corp-id"
+      app_key: "your-app-key"
+      app_secret: "your-app-secret"
+      agent_id: "your-agent-id"
+      user_id: "your-user-id"  # Staff ID in DingTalk
+
+    # Email notification via SMTP
+    email:
+      enabled: false
+      smtp_host: "smtp.example.com"
+      smtp_port: 465
+      smtp_user: "your-email@example.com"
+      smtp_password: "your-password"
+      to_address: "recipient@example.com"
+      use_ssl: true

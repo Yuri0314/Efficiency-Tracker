@@ -25,6 +25,7 @@ from src.collector import (
     get_yesterday_range,
 )
 from src.compare import compare_stats, format_comparison_for_prompt
+from src.notifier import send_notification
 from src.processor import DataProcessor
 from src.reporter import ConsolePrinter, ReportGenerator
 
@@ -254,6 +255,17 @@ def main() -> None:
 
     printer.print_saved(filename)
     printer.print_report(ai_report)
+
+    # Step 7: Send notifications
+    notification_config = config.get("notification", {})
+    if notification_config.get("enabled", False):
+        print("\n📤 正在发送通知...")
+        title = f"效率报告 - {period_name} ({end.strftime('%Y-%m-%d')})"
+        # Send AI report as notification content
+        results = send_notification(notification_config, title, ai_report)
+        for channel, success in results.items():
+            status = "✓" if success else "✗"
+            print(f"   - {channel}: {status}")
 
 
 if __name__ == "__main__":
